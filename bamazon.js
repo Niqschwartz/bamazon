@@ -1,92 +1,81 @@
 var mysql = require("mysql");
 var cTable = require('console.table');
+
 var connection = mysql.createConnection({
-    host     : 'localhost',
-    user     : 'root',
-    password : 'rootroot',
-    database : 'bamazon'
-  });
-   
-  connection.connect(function(err) {
-    if (err) throw err;
-    // console.log("working!")
-  });
+  host: 'localhost',
+  user: 'root',
+  password: 'rootroot',
+  database: 'bamazon'
+});
 
-  console.table([
-    {
-      id: 1,
-      product: 'basketballs',
-      department: "sporting goods",
-      price: 10.00,
-      stock: 100,
-    }, 
-    {
-      id:2,
-      product: 'grills',
-      department: "home goods",
-      price: 75.00,
-      stock: 50,
-    },
-    {
-      id: 3,
-      product: 'lipstick',
-      department: "cosmetics",
-      price: 8.00,
-      stock: 30,
-    }, 
-    {
-      id:4,
-      product: 'lily',
-      department: "garden",
-      price: 10.00,
-      stock: 50,
-    },
-    {
-      id: 5,
-      product: 'cowboy hat',
-      department: "mensware",
-      price: 25.00,
-      stock: 20,
-    }, 
-    {
-      id:6,
-      product: 'laptop',
-      department: "electronics",
-      price: 500.00,
-      stock: 12,
-    },
-    {
-      id: 7,
-      product: 'notebook',
-      department: "back to school",
-      price: 2.00,
-      stock: 200,
-    }, 
-    {
-      id:8,
-      product: 'rolex',
-      department: "jewelry",
-      price: 1500.00,
-      stock: 3,
-    },
+connection.connect(function (err) {
+  if (err) throw err;
+ display()
+});
+function display(){
+connection.query("select * from products", function (err, res) {
+  // console.log(res); 
+  console.table(res);
+  userInput()
+})
+}
+var inquirer = require('inquirer');
+function userInput()
 
-  ]);
-
-  
+{
 inquirer
   .prompt([
     {
-    type: "confirm",
-    name: "id",
-    message: "Enter the ID number of the product you'd like to buy"
-  },
-  {
-    type: "confirm",
-    name: "amount",
-    message: "How many units would you like to buy?"
-  }
+      type: "input",
+      name: "id",
+      message: "Enter the ID number of the product you'd like to buy"
+    },
+    {
+      type: "input",
+      name: "amount",
+      message: "How many units would you like to buy?"
+    }
 
   ])
   .then(answers => {
+    console.log(answers)
     
+    total(answers.id, answers.amount)
   });
+}
+
+function total(id, amount){
+// console.log(id+amount);
+connection.query("select * from products where item_id="+id, function(err, res){
+  console.log(res[0].stock_quantity)
+
+if (amount < res[0].stock_quantity) {
+
+  // connection.query("SELECT * FROM products WHERE item_id=" + id)
+
+
+  
+  connection.query(
+    "UPDATE products SET ? WHERE ?",
+    [
+      {
+        stock_quantity: res[0].stock_quantity - amount
+      },
+      {
+        item_id: id
+      }
+    ],
+    function(error) {
+      if (error) throw err;
+      console.log("Your order has been placed!");
+      display();
+    }
+  );
+}
+else {
+  console.log("We don't have enough of that item in stock...");
+  display();
+}
+})
+
+}
